@@ -2,7 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ThinkificController;
+use App\Thinkific\ThinkificController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,7 +14,7 @@ use App\Http\Controllers\ThinkificController;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
-Route::any("/events/hooks", [ThinkificController::class, 'hooks'])->name('hooks');
+Route::any("/events/hooks", [ThinkificController::class, 'hooks'])->name('hooks.handler');
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });

@@ -24,3 +24,10 @@ automations.
   `public` folder
 - To run locally: `php artisan serve`
 
+# Misc
+
+This project has IDE helper integrated for PHPStrom.
+
+    php artisan run:helper
+
+The above command will create additional files which will be indexed by the IDE. For more insight please refer [laravel-ide-helper](https://github.com/barryvdh/laravel-ide-helper).

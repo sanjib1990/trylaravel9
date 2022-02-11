@@ -16,13 +16,13 @@
 
     <div class="col-lg-12 justify-content-center">
         <div class="row">
-            <div class="col-lg-3">
+            <div class="col-lg-2">
                 <span class="justify-content-cente">ID</span>
             </div>
-            <div class="col-lg-3">
+            <div class="col-lg-6">
                 <span class="justify-content-cente">Details</span>
             </div>
-            <div class="col-lg-3">
+            <div class="col-lg-4">
                 <span class="justify-content-cente">Enroll</span>
             </div>
         </div>
@@ -30,23 +30,24 @@
         @if($coursesList->has('items'))
             @foreach($coursesList->get('items') as $item)
                 <div class="row">
-                    <div class="col-lg-3">
+                    <div class="col-lg-2">
                         <span class="justify-content-cente">{!! $item['id'] !!}</span>
                     </div>
-                    <div class="col-lg-3">
-                        <div class="col-md-12">
-                            <div class="col-md-3">{!! $item['name'] !!}</div>
-                            <div class="col-md-3">
-                                <img width="100px" height="70px" src="{!! config()->get("thinkific.base_url") .
-                                $item['course_card_image_url']!!}" alt="">
+                    <div class="col-lg-6">
+                        <div class="col-lg-12">
+                            <div class="col-lg-4">
+                                Name: {!! $item['name'] !!}
                             </div>
-                            <div class="col-md-3">
-                                {!! $item['description'] !!}
+                            <div class="col-lg-4">
+                                About: {!! $item['description'] !!}
+                            </div>
+                            <div class="col-lg-4">
+                                Total Chapters: {{ count($item['chapter_ids']) }}
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-3">
-                        <form method="post" action="{!! route("enroll") !!}">
+                    <div class="col-lg-4">
+                        <form method="post" action="{{ route("enroll") }}">
                             @csrf
                             <input type="text" required placeholder="First Name" name="first_name">
                             <input type="text" required placeholder="Last Name" name="last_name">

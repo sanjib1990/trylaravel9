@@ -1,3 +1,5 @@
+.phpstorm.*
+_ide_*
 node_modules
 public/hot
 public/storage

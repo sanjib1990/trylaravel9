@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ThinkificController;
+use App\Thinkific\ThinkificController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,7 +18,7 @@ use App\Http\Controllers\ThinkificController;
 
 Route::get("/install", [ThinkificController::class, 'install'])->name("install");
 Route::get("/pages", [ThinkificController::class, 'authourizedPage'])->name("authourizedPage");
-Route::get("/oauth/callback", [ThinkificController::class, 'callback']);
+Route::get("/oauth/callback", [ThinkificController::class, 'callback'])->name("thinkific.oauth.callback");
 Route::get("/support", [ThinkificController::class, 'support'])->name('support');
 Route::post("/authorize/thinkific", [ThinkificController::class, 'startOauthFlow'])->name('startOauthFlow');
 Route::get("/courses", [ThinkificController::class, 'courses'])->name('courses');
