@@ -1,0 +1,60 @@
+name: Build Project
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+        id: checkout
+        name: checkout
+
+      - uses: actions/setup-node@v2
+        id: node
+        name: Node
+        with:
+          node-version: '14'
+
+      - name: Setup PHP
+        id: setup-php
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+          extensions: opcache, mbstring, php-cs-fixer, phpunit, cs2pr, phpcs
+          tools: composer:v2
+        env:
+          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Parallel composer install (prestissimo)
+        run: composer global require hirak/prestissimo
+
+      - name: Install dependencies
+        run: composer install --prefer-dist
+
+      - name: Run phpcs
+        run: phpcs -q --report=checkstyle src | cs2pr
+
+      - name: Run Test
+        run: phpunit --configuration phpunit.xml --testdox
+
+      - name: Npm install
+        run: npm install
+
+      - name: mix
+        run: npm run production
