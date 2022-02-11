@@ -143,13 +143,13 @@
                 @sectionMissing("content")
                     <div class="col-lg-12 justify-content-center">
                         <div class="row m-md-5">
-                            <div class="col-lg-4"></div>
-                            <div class="col-lg-4">
+                            <div class="col-lg-2"></div>
+                            <div class="col-lg-6">
                                 <h1>
                                     Authenticated Page
                                 </h1>
                             </div>
-                            <div class="col-lg-4"></div>
+                            <div class="col-lg-4"> SUBDOMAIN: {{ session()->get("subdomain") }}</div>
                         </div>
                     </div>
                 @endif

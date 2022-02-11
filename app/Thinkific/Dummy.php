@@ -1,23 +1,24 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Thinkific;
 
 use Carbon\Carbon;
 use Ramsey\Uuid\Uuid;
-use App\Models\Order;
 use GuzzleHttp\Client;
-use App\Models\Thinkific;
 use Illuminate\Http\Request;
-use App\Models\RecievedWebhook;
+use App\Thinkific\Models\Order;
 use Illuminate\Support\Collection;
+use App\Thinkific\Models\Thinkific;
 use Illuminate\Support\Facades\View;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Redirect;
 use GuzzleHttp\Exception\ClientException;
+use App\Thinkific\Models\RecievedWebhook;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
-class ThinkificController extends Controller {
+class Dummy extends Controller {
     /**
      * @param \Illuminate\Http\Request $request
      *
@@ -150,7 +151,7 @@ class ThinkificController extends Controller {
      */
     private function getRedirectUrl(): string
     {
-        $appUrl = Config::get("app.ngork_url"); //Config::get("app.url")
+        $appUrl = Config::get("app.url");
 
         return $appUrl . Config::get("thinkific.redirect_uri");
     }
@@ -427,7 +428,7 @@ class ThinkificController extends Controller {
     public function registerAppWebhook(Request $request)
     {
         $event = $request->get("event");
-        $hook = Config::get("app.ngork_url") . "/api/events/hooks";
+        $hook = Config::get("app.url") . "/api/events/hooks";
         try {
             $this->callThinkific("post", "/webhooks", [
                 "json" => [

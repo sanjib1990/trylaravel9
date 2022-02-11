@@ -1,15 +1,20 @@
-name: Build Project
+name: Build
 on:
   push:
     branches:
       - master
-  pull_request:
+  pull_request_target:
     branches:
       - master
 jobs:
-  Explore-GitHub-Actions:
-    runs-on: self-hosted
+  Dependencies-Cache:
+    runs-on: ubuntu-latest
     steps:
+      - uses: n1hility/cancel-previous-runs@v2
+        name: Cancel Previous Runs
+        with:
+          token: ${{ secrets.PAT }}
+
       - uses: actions/checkout@v2
         id: checkout
         name: checkout
@@ -25,10 +30,84 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.0'
-          extensions: opcache, mbstring, php-cs-fixer, phpunit, cs2pr, phpcs
+          extensions: opcache, mbstring
           tools: composer:v2
         env:
-          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMPOSER_TOKEN: ${{ secrets.PAT }}
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+      - name: Get NPM cache directory
+        id: npm-cache
+        run: echo "::set-output name=dir::$(npm config get cache)"
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Cache Node dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.npm-cache.outputs.dir }}
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package.json') }}
+          restore-keys: ${{ runner.os }}-npm-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist
+
+      - name: Npm install
+        run: npm install
+
+  Feature-Test:
+    runs-on: ubuntu-latest
+    needs:
+      - Dependencies-Cache
+    env:
+      APP_KEY: ${{ secrets.APP_KEY }}
+      APP_ENV: testing
+      DB_PORT: 3800
+      DB_DATABASE: ${{ secrets.DB_NAME }}
+      DB_USERNAME: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+    steps:
+      - uses: n1hility/cancel-previous-runs@v2
+        name: Cancel Previous Runs
+        with:
+          token: ${{ secrets.PAT }}
+
+      - uses: actions/checkout@v2
+        id: checkout
+        name: checkout
+
+      - uses: actions/setup-node@v2
+        id: node
+        name: Node
+        with:
+          node-version: '14'
+
+      - uses: mirromutth/mysql-action@v1.1
+        with:
+          host port: ${{ env.DB_PORT }}
+          character set server: 'utf8'
+          collation server: 'utf8_general_ci'
+          mysql version: '8.0'
+          mysql database: ${{ env.DB_DATABASE }}
+          mysql root password: ${{ env.DB_PASSWORD }}
+
+      - name: Setup PHP
+        id: setup-php
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+          extensions: opcache, mbstring
+          tools: composer:v2
+        env:
+          COMPOSER_TOKEN: ${{ secrets.PAT }}
 
       - name: Get composer cache directory
         id: composer-cache
@@ -38,23 +117,113 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
           restore-keys: ${{ runner.os }}-composer-
 
-      - name: Parallel composer install (prestissimo)
-        run: composer global require hirak/prestissimo
+      - name: Get NPM cache directory
+        id: npm-cache
+        run: echo "::set-output name=dir::$(npm config get cache)"
+
+      - name: Cache Node dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.npm-cache.outputs.dir }}
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package.json') }}
+          restore-keys: ${{ runner.os }}-npm-
 
       - name: Install dependencies
         run: composer install --prefer-dist
 
-      - name: Run phpcs
-        run: phpcs -q --report=checkstyle src | cs2pr
-
-      - name: Run Test
-        run: phpunit --configuration phpunit.xml --testdox
+      - name: Run Migration
+        run: php artisan migrate
 
       - name: Npm install
         run: npm install
 
       - name: mix
         run: npm run production
+
+      - name: Run Test
+        run: vendor/bin/phpunit --configuration phpunit.xml --testdox --testsuite "Feature"
+  Unit-Test:
+    runs-on: ubuntu-latest
+    needs:
+      - Dependencies-Cache
+    env:
+      APP_KEY: ${{ secrets.APP_KEY }}
+      APP_ENV: testing
+      DB_PORT: 3800
+      DB_DATABASE: ${{ secrets.DB_NAME }}
+      DB_USERNAME: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+    steps:
+      - uses: n1hility/cancel-previous-runs@v2
+        name: Cancel Previous Runs
+        with:
+          token: ${{ secrets.PAT }}
+
+      - uses: actions/checkout@v2
+        id: checkout
+        name: checkout
+
+      - uses: actions/setup-node@v2
+        id: node
+        name: Node
+        with:
+          node-version: '14'
+
+      - uses: mirromutth/mysql-action@v1.1
+        with:
+          host port: ${{ env.DB_PORT }}
+          character set server: 'utf8'
+          collation server: 'utf8_general_ci'
+          mysql version: '8.0'
+          mysql database: ${{ env.DB_DATABASE }}
+          mysql root password: ${{ env.DB_PASSWORD }}
+
+      - name: Setup PHP
+        id: setup-php
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+          extensions: opcache, mbstring
+          tools: composer:v2
+        env:
+          COMPOSER_TOKEN: ${{ secrets.PAT }}
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Get NPM cache directory
+        id: npm-cache
+        run: echo "::set-output name=dir::$(npm config get cache)"
+
+      - name: Cache Node dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.npm-cache.outputs.dir }}
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package.json') }}
+          restore-keys: ${{ runner.os }}-npm-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist
+
+      - name: Run Migration
+        run: php artisan migrate
+
+      - name: Npm install
+        run: npm install
+
+      - name: mix
+        run: npm run production
+
+      - name: Run Test
+        run: vendor/bin/phpunit --configuration phpunit.xml --testdox --testsuite "Unit"
