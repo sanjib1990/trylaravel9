@@ -70,6 +70,11 @@ class Service
     {
         $userDetail = $this->repository->getUserByEmail($request);
 
+        if ($userDetail->isEmpty())
+        {
+            $userDetail = $this->repository->registerStudent($request);
+        }
+
         $request->put(Constants::STUDENT_ID, $userDetail->get("id"));
 
         $this->repository->enrollStudent($request);

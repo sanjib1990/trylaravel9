@@ -10,8 +10,6 @@ use App\Thinkific\Models\Order;
 use App\Thinkific\TokenManager;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Session;
-use function logger;
-use function collect;
 
 class Repository
 {
@@ -80,9 +78,7 @@ class Repository
         $url = UrlBuilder::buildUsersUrl();
 
         $query = [
-            "query" => [
-                "query[email]" => $request->get(Constants::EMAIL),
-            ]
+            "query[email]" => $request->get(Constants::EMAIL),
         ];
 
         $userDetails = $client
@@ -93,21 +89,19 @@ class Repository
             ->collect();
 
         if (empty($userDetails->get('items', []))) {
-            $userDetail = $this->registerUser($request);
-        } else {
-            $userDetail = collect($userDetails->get("items")[0]);
-            logger()->debug("[User Exists]", $userDetail->toArray());
+            return collect();
         }
 
-        return $userDetail;
+        return collect($userDetails->get("items")[0]);
     }
+
 
     /**
      * @param \Illuminate\Support\Collection $request
      *
      * @return \Illuminate\Support\Collection
      */
-    public function registerUser(Collection $request): Collection
+    public function registerStudent(Collection $request): Collection
     {
         $data = [
             "email"         => $request->get("email"),
