@@ -15,23 +15,24 @@ use App\Thinkific\ThinkificController;
 */
 
 
-
-Route::get("/install", [ThinkificController::class, 'install'])->name("install");
-Route::get("/pages", [ThinkificController::class, 'authourizedPage'])->name("authourizedPage");
-Route::get("/oauth/callback", [ThinkificController::class, 'callback'])->name("thinkific.oauth.callback");
-Route::get("/support", [ThinkificController::class, 'support'])->name('support');
-Route::post("/authorize/thinkific", [ThinkificController::class, 'startOauthFlow'])->name('startOauthFlow');
-Route::get("/courses", [ThinkificController::class, 'courses'])->name('courses');
-Route::post("/courses", [ThinkificController::class, 'enroll'])->name('enroll');
-Route::post("/enroll/deactivate", [ThinkificController::class, 'deactivateEnrollment'])->name('enroll.deactivate');
-Route::get("/view/webhooks", [ThinkificController::class, 'listRecievedWebhooks'])->name('webhooks.view');
-Route::get("/view/register/webhooks", [ThinkificController::class, 'listRegisteredWebhooks'])->name('webhooks.registered.view');
-Route::get("/register/webhooks", [ThinkificController::class, 'viewRegisterAppWebhook'])->name('webhooks.register.view');
-Route::post("/register/webhooks", [ThinkificController::class, 'registerAppWebhook'])->name('webhooks.register');
-Route::post("/remove/webhooks", [ThinkificController::class, 'deleteWebhooks'])->name('webhooks.delete');
-Route::get("/webhooks", [ThinkificController::class, 'webhooks'])->name('webhooks.get');
-Route::get("/orders", [ThinkificController::class, 'listOrders'])->name('order');
-Route::post("/refund", [ThinkificController::class, 'refund'])->name('refund');
+Route::controller(ThinkificController::class)->group(function () {
+    Route::get("/install", 'install')->name("install");
+    Route::get("/pages", 'authourizedPage')->name("authourizedPage");
+    Route::get("/oauth/callback", 'callback')->name("thinkific.oauth.callback");
+    Route::get("/support", 'support')->name('support');
+    Route::post("/authorize/thinkific", 'startOauthFlow')->name('startOauthFlow');
+    Route::get("/courses", 'courses')->name('courses');
+    Route::post("/courses", 'enroll')->name('enroll');
+    Route::post("/enroll/deactivate", 'deactivateEnrollment')->name('enroll.deactivate');
+    Route::get("/view/webhooks", 'listRecievedWebhooks')->name('webhooks.view');
+    Route::get("/view/register/webhooks", 'listRegisteredWebhooks')->name('webhooks.registered.view');
+    Route::get("/register/webhooks", 'viewRegisterAppWebhook')->name('webhooks.register.view');
+    Route::post("/register/webhooks", 'registerAppWebhook')->name('webhooks.register');
+    Route::post("/remove/webhooks", 'deleteWebhooks')->name('webhooks.delete');
+    Route::get("/webhooks", 'webhooks')->name('webhooks.get');
+    Route::get("/orders", 'listOrders')->name('order');
+    Route::post("/refund", 'refund')->name('refund');
+});
 
 Auth::routes();
 
