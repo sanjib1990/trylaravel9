@@ -3,6 +3,7 @@
 namespace App\Thinkific\Repositories;
 
 use Carbon\Carbon;
+use App\Thinkific\Helper;
 use App\Thinkific\Constants;
 use App\Thinkific\HttpClient;
 use App\Thinkific\UrlBuilder;
@@ -56,15 +57,9 @@ class Repository
      */
     public function fetchCourses(Collection $request): Collection
     {
-        $client = new HttpClient();
         $url = UrlBuilder::buildFetchCourseUrl();
 
-        return $client
-            ->setUrl($url)
-            ->setBearerAuth($this->getBearerToken())
-            ->setQuery($request->toArray())
-            ->get()
-            ->collect();
+        return Helper::makeGetCall($url, $request->toArray());
     }
 
     /**
@@ -74,19 +69,13 @@ class Repository
      */
     public function getUserByEmail(Collection $request): Collection
     {
-        $client = new HttpClient();
         $url = UrlBuilder::buildUsersUrl();
 
         $query = [
             "query[email]" => $request->get(Constants::EMAIL),
         ];
 
-        $userDetails = $client
-            ->setUrl($url)
-            ->setBearerAuth($this->getBearerToken())
-            ->setQuery($query)
-            ->get()
-            ->collect();
+        $userDetails = Helper::makeGetCall($url, $query);
 
         if (empty($userDetails->get('items', []))) {
             return collect();
@@ -111,15 +100,9 @@ class Repository
 
         logger()->debug("[Registering User]", $data);
 
-        $client = new HttpClient();
         $url = UrlBuilder::buildUsersUrl();
 
-        return $client
-            ->setUrl($url)
-            ->setBearerAuth($this->getBearerToken())
-            ->setJson($data)
-            ->post()
-            ->collect();
+        return Helper::makePostCall($url, $data);
     }
 
     /**
@@ -131,15 +114,9 @@ class Repository
     {
         logger()->debug("[Enroll]", $request->all());
 
-        $client = new HttpClient();
         $url = UrlBuilder::buildEnrollmentUrl();
 
-        return $client
-            ->setUrl($url)
-            ->setBearerAuth($this->getBearerToken())
-            ->setJson($this->getEnrollData($request))
-            ->post()
-            ->collect();
+        return Helper::makePostCall($url, $this->getEnrollData($request));
     }
 
     /**
@@ -165,15 +142,9 @@ class Repository
 
         logger()->debug("[Placing Thinkific Order]", $data);
 
-        $client = new HttpClient();
         $url = UrlBuilder::buildExternalOrderUrl();
 
-        $response = $client
-            ->setUrl($url)
-            ->setBearerAuth($this->getBearerToken())
-            ->setJson($data)
-            ->post()
-            ->toArray();
+        $response = Helper::makePostCall($url, $data)->toArray();
 
         $order->setAttribute(Constants::EXTERNAL_ORDER_ID, $response['id']);
         $order->save();
@@ -192,15 +163,9 @@ class Repository
 
         logger()->debug("[Refunding Order]", $data);
 
-        $client = new HttpClient();
         $url = UrlBuilder::buildExternalRefundUrl($order->getAttribute(Constants::EXTERNAL_ORDER_ID));
 
-        return $client
-            ->setUrl($url)
-            ->setBearerAuth($this->getBearerToken())
-            ->setJson($data)
-            ->post()
-            ->collect();
+        return Helper::makePostCall($url, $data);
     }
 
     /**
@@ -210,14 +175,9 @@ class Repository
      */
     public function fetchRegisteredWebhooks(Collection $request): Collection
     {
-        $client = new HttpClient();
         $url = UrlBuilder::buildWebhookUrl();
 
-        return $client
-            ->setUrl($url)
-            ->setBearerAuth($this->getBearerToken())
-            ->get()
-            ->collect();
+        return Helper::makeGetCall($url);
     }
 
     /**
@@ -228,14 +188,8 @@ class Repository
     public function registerWebhook(Collection $request): Collection
     {
         $url = UrlBuilder::buildWebhookUrl();
-        $client = new HttpClient();
 
-        return $client
-            ->setUrl($url)
-            ->setBearerAuth($this->getBearerToken())
-            ->setJson($this->getRegisterWebhookData($request))
-            ->post()
-            ->collect();
+        return Helper::makePostCall($url, $this->getRegisterWebhookData($request));
     }
 
     /**
@@ -246,25 +200,8 @@ class Repository
     public function deleteWebhook(Collection $request): Collection
     {
         $url = UrlBuilder::buildWebhookDeleteUrl($request->get("id"));
-        $client = new HttpClient();
 
-        return $client
-            ->setUrl($url)
-            ->setBearerAuth($this->getBearerToken())
-            ->delete()
-            ->collect();
-    }
-
-    /**
-     * @return string
-     */
-    private function getBearerToken(): string
-    {
-        $manager = new TokenManager();
-        $input = collect([Constants::SUBDOMAIN => Session::get(Constants::SUBDOMAIN)]);
-        $manager->setInput($input);
-
-        return $manager->getBearerToken();
+        return Helper::makeDeleteCall($url, []);
     }
 
     private function preExternalOrderProcessor(Collection $request)
