@@ -4,6 +4,7 @@ namespace App\Thinkific;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Response;
 use App\Thinkific\Repositories\Repository;
 
@@ -49,6 +50,14 @@ class Service
         $manager = new TokenManager();
 
         $manager->setInput($request)->generateBearerToken();
+    }
+
+    public function handleOAuthCallbackPkce(Collection $request): void
+    {
+        // Doesnt work, always get a repsonse "401 Unauthorized" even though the appropriate request is being passed
+        $manager = new TokenManager();
+
+        $manager->setInput($request)->generateBearerTokenWithPkce();
     }
 
     /**
@@ -185,5 +194,33 @@ class Service
         $this->repository->recievedWebhookRepository()->create($data);
 
         return Response::json($request->toArray());
+    }
+
+    /**
+     * @param \Illuminate\Support\Collection $request
+     *
+     * @return string
+     * @throws \Exception
+     */
+    public function getOauthFlowUrlWithPkce(Collection $request): string
+    {
+        // Doesnt work, always get a repsonse "401 Unauthorized" even though the appropriate request is being passed
+        $state      = TokenManager::generateState();
+        $clientId   = TokenManager::getClientId();
+        $subdomain  = $request->get(Constants::SUBDOMAIN);
+        $codeVerifier = TokenManager::generateCodeVerifier();
+        $codechallengeMethod = TokenManager::CODE_CHALLENGE_METHOD_VALUE;
+        Cache::put(TokenManager::CODE_VERIFIER, $codeVerifier);
+        $codeChallenge = TokenManager::getCodeChallenge($codeVerifier, $codechallengeMethod);
+
+        return UrlBuilder::buildOauthFlowUrlWithPkce(
+            $state,
+            $clientId,
+            $subdomain,
+            TokenManager::OAUTH_RESPONSE_MODE,
+            TokenManager::OAUTH_RESPONSE_TYPE,
+            $codeChallenge,
+            $codechallengeMethod
+        );
     }
 }

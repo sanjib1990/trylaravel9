@@ -177,4 +177,39 @@ class UrlBuilder
 
         return "/" . implode("/", $split);
     }
+
+    /**
+     * @param string $state
+     * @param string $clientId
+     * @param string $subdomain
+     * @param string $responseMode
+     * @param string $responseType
+     * @param string $codeChallenge
+     * @param string $codechallengeMethod
+     *
+     * @return string
+     */
+    public static function buildOauthFlowUrlWithPkce(
+        string $state,
+        string $clientId,
+        string $subdomain,
+        string $responseMode,
+        string $responseType,
+        string $codeChallenge,
+        string $codechallengeMethod
+    ): string
+    {
+        $domain = self::getThinkificBaseUrl($subdomain);
+
+        return $domain
+            . self::OAUTH_AUTHORIZE_URI
+            . "?"
+            . "client_id=$clientId&"
+            . "redirect_uri=". self::buildOauthFlowRedirectUrl() ."&"
+            . "response_mode=$responseMode&"
+            . "response_type=$responseType&"
+            . "state=$state&"
+            . "code_challenge=$codeChallenge&"
+            . "code_challenge_method=$codechallengeMethod";
+    }
 }

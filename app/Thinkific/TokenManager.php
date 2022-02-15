@@ -7,6 +7,7 @@ use Ramsey\Uuid\Uuid;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use App\Thinkific\Models\Thinkific;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Symfony\Component\HttpFoundation\Exception\BadRequestException;
 
@@ -15,12 +16,18 @@ class TokenManager
     const CODE                      = "code";
     const GRAN_TYPE                 = "grant_type";
     const REFRESH_TOKEN             = "refresh_token";
+    const CODE_VERIFIER             = "code_verifier";
     const AUTHORIZATION_CODE        = "authorization_code";
     const OAUTH_RESPONSE_TYPE       = "code";
-    const OAUTH_RESPONSE_MODE       = "query";
+    const OAUTH_RESPONSE_MODE       = "form_post";
     const CLIENT_ID_CONFIG_KEY      = "thinkific.client_id";
     const CLIENT_SECRET_CONFIG_KEY  = "thinkific.client_secret";
 
+    const CODE_CHALLENGE_METHOD_VALUE   = "S256";
+
+    const SUPPORTED_ALGOS = [
+        self::CODE_CHALLENGE_METHOD_VALUE => "SHA256"
+    ];
     /**
      * @var string
      */
@@ -59,6 +66,27 @@ class TokenManager
     public static function generateState(): string
     {
         return Uuid::uuid4()->toString();
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public static function generateCodeVerifier(): string
+    {
+        return bin2hex(random_bytes(128));
+    }
+
+    /**
+     * @param string $codeVerifier
+     * @param string $codechallengeMethod
+     *
+     * @return string
+     */
+    public static function getCodeChallenge(string $codeVerifier, string $codechallengeMethod): string
+    {
+        $hash = hash(self::SUPPORTED_ALGOS[$codechallengeMethod], $codeVerifier);
+
+        return base64_encode($hash);
     }
 
     /**
@@ -183,6 +211,36 @@ class TokenManager
             ->post()
             ->collect();
 
+        if ($response->isEmpty())
+        {
+            throw new BadRequestException("Could generate token", 400);
+        }
+
+        $thinkific = [
+            Constants::SUBDOMAIN    => $this->input->get(Constants::SUBDOMAIN),
+            Constants::TOKEN        => $response->get(Constants::ACCESS_TOKEN),
+            self::REFRESH_TOKEN     => $response->get(self::REFRESH_TOKEN),
+            Constants::GID          => $response->get(Constants::GID),
+            Constants::EXPIRES_IN   => $response->get(Constants::EXPIRES_IN),
+        ];
+
+        $this->storeToken($thinkific);
+
+        return $thinkific;
+    }
+
+    public function generateBearerTokenWithPkce(): array
+    {
+        // Doesnt work, always get a repsonse "401 Unauthorized" even though the appropriate request is being passed
+        $url = UrlBuilder::getBearerAuthUrl($this->input->get(Constants::SUBDOMAIN));
+        $client = new HttpClient();
+        $response = $client
+            ->setUrl($url)
+            ->setBasicAuth($this->getBasicAuthToken())
+            ->setJson($this->getTokenRequestBody())
+            ->post()
+            ->collect();
+
         $thinkific = [
             Constants::SUBDOMAIN    => $this->input->get(Constants::SUBDOMAIN),
             Constants::TOKEN        => $response->get(Constants::ACCESS_TOKEN),
@@ -208,6 +266,7 @@ class TokenManager
             $body[self::REFRESH_TOKEN] = $this->input->get(self::REFRESH_TOKEN);
         } else {
             $body[self::CODE] = $this->input->get(self::CODE);
+            $body[self::CODE_VERIFIER] = Cache::get(self::CODE_VERIFIER);
         }
 
         return $body;

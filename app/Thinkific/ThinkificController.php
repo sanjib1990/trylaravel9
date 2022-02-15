@@ -96,6 +96,9 @@ class ThinkificController extends Controller
     {
         $url = $this->service->getOauthFlowUrl($request->collect());
 
+        // Doesnt work, always get a repsonse "401 Unauthorized" even though the appropriate request is being passed
+        // $url = $this->service->getOauthFlowUrlWithPkce($request->collect());
+
         Session::put(Constants::SUBDOMAIN, $request->get(Constants::SUBDOMAIN));
 
         logger()->debug("[START OAUTH] With URL: ". $url);
@@ -110,13 +113,15 @@ class ThinkificController extends Controller
      */
     public function callback(Request $request): RedirectResponse
     {
-        logger()->info("[OAUTH CALLBACK RECIEVED]", $request->all());
+        logger()->info("[OAUTH CALLBACK RECIEVED]", [$request->all(), $request->headers->all()]);
 
         if ($request->has("error")) {
             return Redirect::route("install")->withErrors($request->get("error"));
         }
 
         $this->service->handleOAuthCallback($request->collect());
+        // Doesnt work, always get a repsonse "401 Unauthorized" even though the appropriate request is being passed
+        // $this->service->handleOAuthCallbackPkce($request->collect());
 
         Session::put(Constants::SUBDOMAIN, $request->get(Constants::SUBDOMAIN));
 

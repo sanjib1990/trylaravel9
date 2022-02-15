@@ -16,9 +16,9 @@ use App\Thinkific\ThinkificController;
 
 
 Route::controller(ThinkificController::class)->group(function () {
+    Route::match(["get", "post"], "/oauth/callback", 'callback')->name("thinkific.oauth.callback");
     Route::get("/install", 'install')->name("install");
     Route::get("/pages", 'authourizedPage')->name("authourizedPage");
-    Route::get("/oauth/callback", 'callback')->name("thinkific.oauth.callback");
     Route::get("/support", 'support')->name('support');
     Route::post("/authorize/thinkific", 'startOauthFlow')->name('startOauthFlow');
     Route::get("/courses", 'courses')->name('courses');
